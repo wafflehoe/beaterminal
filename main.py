@@ -1,5 +1,6 @@
 import curses
 from pathlib import Path
+import json
 
 # main menu stuff
 import time
@@ -7,10 +8,47 @@ import math
 from datetime import datetime
 import random
 
+#other modules for menus
+import utils.songPicker
+
+
+
+#log feature
 logPath = Path(__file__).resolve().parent / "log.txt"
 location = "mainMenu"
 
-#main menu variables
+#config (options)
+optionsPath = Path(__file__).resolve().parent / "config" / "basicConfig.json"
+optionsPath.resolve()
+
+
+def getKeybinds():
+    with open(optionsPath, "r") as file:
+        jsonified = json.load(file)
+
+    return jsonified["keybinds"]
+
+def returnKeybinds(keybinds, upFunc = None, downFunc = None, leftFunc = None, rightFunc = None, enterFunc = None, anyFunc = None):
+    trueKeybinds = {}
+    actions = {
+      "up": upFunc,
+      "down": downFunc,
+      "left": leftFunc,
+      "right": rightFunc,
+      "enter": enterFunc,
+    }
+    for key, action in keybinds.items():
+        whichKeybind = actions.get(action)
+        if whichKeybind:
+            try:
+                key = int(key)
+            except:
+                pass
+            trueKeybinds[key] = actions[action] 
+        elif anyFunc:
+            trueKeybinds[key] = anyFunc
+    return trueKeybinds
+            
 
 def print(*args):
     with open(logPath, "a") as file:
@@ -21,13 +59,19 @@ def print(*args):
 def centerText(text, width, percentage) -> int:
     return int(width * percentage) - math.floor(len(text)/2) 
 
-def mainMenu(stdscr: "curses.window", height, width):
+
+
+
+
+
+def mainMenu(stdscr: "curses.window", height, width, keybinds):
     # minecraft like text for the menu uptop
     splashTextEndings = [
         "the worst rhythm game ever",
         "the only game to actively steal your soul",
         "why did i make this",
-        "sorry my bedtime's " + str(datetime.now().hour % 12) + "PM zZZ"
+        "sorry my bedtime's " + str(datetime.now().hour % 12) + "PM zZZ",
+        f"XxxausYhwher {"red sus"} JiwjnnnXCiXxxausIn"
     ]
     randomNumber = random.randint(0, len(splashTextEndings) - 1)
     splashText = f"beaterminal: {splashTextEndings[randomNumber]}"
@@ -59,13 +103,33 @@ def mainMenu(stdscr: "curses.window", height, width):
         if (page == "mainMenu"):
             optionChosen = min(2, optionChosen + 1)
 
-    keys = {
-        curses.KEY_UP: keyUp,
-        curses.KEY_LEFT: keyLeft,
-        curses.KEY_RIGHT: keyRight,
-        curses.KEY_DOWN: keyDown
-    }
+    def keyEnter():
+        nonlocal optionChosen
+        global location
+        if (page == "mainMenu"):
+            if (optionChosen == 1):
+                location = "songSelect"
 
+    # keys = {
+    #     curses.KEY_UP: keyUp,
+    #     curses.KEY_LEFT: keyLeft,
+    #     curses.KEY_RIGHT: keyRight,
+    #     curses.KEY_DOWN: keyDown,
+    #     curses.KEY_ENTER: keyEnter,
+    #     10: keyEnter,
+    #     13: keyEnter,
+    # }
+
+    keys = returnKeybinds(
+        keybinds,
+        keyUp,
+        keyDown,
+        keyLeft,
+        keyRight,
+        keyEnter
+        )
+
+    print(keys)
     backgroundElements: list[list[int]] = []
     timeSinceLastDrop = 0
 
@@ -74,7 +138,7 @@ def mainMenu(stdscr: "curses.window", height, width):
     def renderMainMenu():
         # background
         nonlocal backgroundElements
-        nonlocal timeSinceLastDrop            
+        nonlocal timeSinceLastDrop    
 
         stdscr.erase()
         for i in range(len(backgroundElements)):
@@ -103,7 +167,7 @@ def mainMenu(stdscr: "curses.window", height, width):
             timeSinceLastDrop -= 1
         
         #actual options
-        stdscr.addstr(0, centerText(splashText, width, 1/2), splashText)
+        stdscr.addstr(0, centerText(splashText, width, 1/2), splashText, curses.A_BOLD)
         stdscr.addstr(int(height/2), centerText(options[page][0], width, 1/4), options[page][0])
         stdscr.addstr(int(height/2), centerText(options[page][1], width, 2/4), options[page][1])
         stdscr.addstr(int(height/2), centerText(options[page][2], width, 3/4), options[page][2])    
@@ -111,28 +175,47 @@ def mainMenu(stdscr: "curses.window", height, width):
         stdscr.addch(int(height/2), centerText(options[page][optionChosen], width, (optionChosen + 1)/4) - 1, ">")
     
     # main game loop
-    while True:
-        key = stdscr.getch()
+    while True:        
+        global location
+        key = stdscr.getch()        
+        if (location != "mainMenu"):
+            break
+                
         if (page == "mainMenu"):
-            renderMainMenu()
+            renderMainMenu()        
+            handler = keys.get(key)
+            if handler:
+                handler()
 
-        handler = keys.get(key)
-        if handler:
-            handler()
+
     pass
 
-def main(stdscr: 'curses.window'):    
-    with open(logPath, "w") as file:
-        file.write("")
-    curses.initscr()
-    curses.curs_set(0)
-    stdscr.nodelay(True)
-    stdscr.keypad(True)
+chosenSong = ([])
+with open(logPath, "w") as file:
+    file.write("")
 
-    height, width = stdscr.getmaxyx()
-    match location:
-        case "mainMenu":
-            mainMenu(stdscr, height, width)
+def main(stdscr: 'curses.window'):   
+    keybinds = getKeybinds()
+    stdscr.clear() 
+    while True:
+
+        curses.initscr()
+        curses.curs_set(0)
+        stdscr.nodelay(True)
+        stdscr.keypad(True)
+
+        global location
+        global chosenSong
+        height, width = stdscr.getmaxyx()
+        match location:
+            case "mainMenu":
+                mainMenu(stdscr, height, width, keybinds)
+            case "songSelect":
+                location, chosenSong = utils.songPicker.main(stdscr, height, width, keybinds)
+                print(chosenSong)
+            case "songLoader":
+                
+            
 
 if __name__ == "__main__":
     curses.wrapper(main)

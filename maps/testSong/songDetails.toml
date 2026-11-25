@@ -1,2 +1,6 @@
 [songDetails]
-songfile = "./testSongRuru.mp3"
+name = "Ruru's Suicide Show on a Livestream"
+songFile = "testSongRuru.mp3"
+
+[map]
+entryFile = "main.py"
