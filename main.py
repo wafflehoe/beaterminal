@@ -10,11 +10,9 @@ import random
 
 #other modules for menus
 import utils.songPicker
+import utils.songHandler
+from utils.generalFunctions import print, centerText, returnKeybinds, init
 
-
-
-#log feature
-logPath = Path(__file__).resolve().parent / "log.txt"
 location = "mainMenu"
 
 #config (options)
@@ -28,36 +26,7 @@ def getKeybinds():
 
     return jsonified["keybinds"]
 
-def returnKeybinds(keybinds, upFunc = None, downFunc = None, leftFunc = None, rightFunc = None, enterFunc = None, anyFunc = None):
-    trueKeybinds = {}
-    actions = {
-      "up": upFunc,
-      "down": downFunc,
-      "left": leftFunc,
-      "right": rightFunc,
-      "enter": enterFunc,
-    }
-    for key, action in keybinds.items():
-        whichKeybind = actions.get(action)
-        if whichKeybind:
-            try:
-                key = int(key)
-            except:
-                pass
-            trueKeybinds[key] = actions[action] 
-        elif anyFunc:
-            trueKeybinds[key] = anyFunc
-    return trueKeybinds
-            
 
-def print(*args):
-    with open(logPath, "a") as file:
-        for i in range(len(args)):
-            file.write(str(args[i]) + " ")
-        file.write("\n")
-
-def centerText(text, width, percentage) -> int:
-    return int(width * percentage) - math.floor(len(text)/2) 
 
 
 
@@ -191,8 +160,7 @@ def mainMenu(stdscr: "curses.window", height, width, keybinds):
     pass
 
 chosenSong = ([])
-with open(logPath, "w") as file:
-    file.write("")
+
 
 def main(stdscr: 'curses.window'):   
     keybinds = getKeybinds()
@@ -214,8 +182,10 @@ def main(stdscr: 'curses.window'):
                 location, chosenSong = utils.songPicker.main(stdscr, height, width, keybinds)
                 print(chosenSong)
             case "songLoader":
-                
+                print("sacrifice")
+                utils.songHandler.main(stdscr, height, width, keybinds, chosenSong)
             
 
 if __name__ == "__main__":
+    init()
     curses.wrapper(main)

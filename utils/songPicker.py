@@ -1,5 +1,5 @@
 import curses
-from main import centerText, returnKeybinds, print
+from utils.generalFunctions import centerText, returnKeybinds, print
 from pathlib import Path
 
 # song metadata
